@@ -18,30 +18,30 @@ func NewService(b *production.Service, srl *serialization.Service, sh *shipment.
 	return &Service{batches: b, serials: srl, shipments: sh, stock: st}
 }
 
-// TraceByCode resolves a full serial code (GTIN+serial) to its complete
+// ResolveByCode resolves a full serial code (GTIN+serial) to its complete
 // traceability chain: production batch, movement timeline and current stock.
-func (s *Service) TraceByCode(code string) (TraceResult, error) {
+func (s *Service) ResolveByCode(code string) (ChainResult, error) {
 	srl, err := s.serials.Get(code)
 	if err != nil {
-		return TraceResult{}, err
+		return ChainResult{}, err
 	}
-	res, err := s.TraceByBatch(srl.BatchID)
+	res, err := s.ResolveByBatch(srl.BatchID)
 	if err != nil {
-		return TraceResult{}, err
+		return ChainResult{}, err
 	}
 	res.Code = code
 	return res, nil
 }
 
-// TraceByBatch assembles the chain for a production batch and verifies chain
+// ResolveByBatch assembles the chain for a production batch and verifies chain
 // integrity: the first movement must be production, and any released batch
 // without a production node is flagged as an incomplete chain.
-func (s *Service) TraceByBatch(batchID string) (TraceResult, error) {
+func (s *Service) ResolveByBatch(batchID string) (ChainResult, error) {
 	b, err := s.batches.Get(batchID)
 	if err != nil {
-		return TraceResult{}, err
+		return ChainResult{}, err
 	}
-	res := TraceResult{
+	res := ChainResult{
 		BatchID:   b.ID,
 		DrugID:    b.DrugID,
 		BatchNo:   b.BatchNo,

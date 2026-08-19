@@ -28,14 +28,14 @@ import (
 	"pharma-batch-traceability-service/internal/quality"
 	"pharma-batch-traceability-service/internal/isolation"
 	"pharma-batch-traceability-service/internal/recall"
-	"pharma-batch-traceability-service/internal/report"
+	"pharma-batch-traceability-service/internal/summary"
 	"pharma-batch-traceability-service/internal/serialization"
 	"pharma-batch-traceability-service/internal/shipment"
 	"pharma-batch-traceability-service/internal/stock"
 	"pharma-batch-traceability-service/internal/supplier"
 	"pharma-batch-traceability-service/internal/lineage"
 	"pharma-batch-traceability-service/internal/warehouse"
-	"pharma-batch-traceability-service/internal/worker"
+	"pharma-batch-traceability-service/internal/scheduler"
 )
 
 func main() {
@@ -64,7 +64,7 @@ func main() {
 	coldchainSvc := coldchain.NewService(clock)
 	notificationSvc := notification.NewService(clock)
 	labelSvc := label.NewService(clock, batches)
-	reportSvc := report.NewService(stocks, batches, serials)
+	reportSvc := summary.NewService(stocks, batches, serials)
 
 	seed(clock, drugs, warehouses, batches, serials, stocks, shipments)
 
@@ -76,7 +76,7 @@ func main() {
 	mux := server.Routes()
 	mux.Handle("/", http.FileServer(http.Dir("web")))
 
-	expiryWorker := worker.NewExpiryWorker(time.Minute, expiries)
+	expiryWorker := scheduler.NewExpiryWorker(time.Minute, expiries)
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 	expiryWorker.Start(ctx)

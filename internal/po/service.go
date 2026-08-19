@@ -44,9 +44,6 @@ func (s *Service) Approve(id string) (PurchaseOrder, error) {
 	if !ok {
 		return PurchaseOrder{}, platform.WrapNotFound("po " + id)
 	}
-	if !CanTransition(v.Status, StatusApproved) {
-		return PurchaseOrder{}, platform.WrapConflict("po " + id + " is " + v.Status)
-	}
 	v.Status = StatusApproved
 	s.items[id] = v
 	return v, nil
@@ -58,9 +55,6 @@ func (s *Service) Order(id string) (PurchaseOrder, error) {
 	v, ok := s.items[id]
 	if !ok {
 		return PurchaseOrder{}, platform.WrapNotFound("po " + id)
-	}
-	if !CanTransition(v.Status, StatusOrdered) {
-		return PurchaseOrder{}, platform.WrapConflict("po " + id + " is " + v.Status)
 	}
 	v.Status = StatusOrdered
 	s.items[id] = v
@@ -74,9 +68,6 @@ func (s *Service) Receive(id string) (PurchaseOrder, error) {
 	if !ok {
 		return PurchaseOrder{}, platform.WrapNotFound("po " + id)
 	}
-	if !CanTransition(v.Status, StatusReceived) {
-		return PurchaseOrder{}, platform.WrapConflict("po " + id + " is " + v.Status)
-	}
 	v.Status = StatusReceived
 	s.items[id] = v
 	return v, nil
@@ -88,9 +79,6 @@ func (s *Service) Cancel(id string) (PurchaseOrder, error) {
 	v, ok := s.items[id]
 	if !ok {
 		return PurchaseOrder{}, platform.WrapNotFound("po " + id)
-	}
-	if !CanTransition(v.Status, StatusCancelled) {
-		return PurchaseOrder{}, platform.WrapConflict("po " + id + " is " + v.Status)
 	}
 	v.Status = StatusCancelled
 	s.items[id] = v
