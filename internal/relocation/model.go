@@ -38,19 +38,22 @@ var statuses = map[string]bool{
 func CanTransition(from, to string) bool {
 	switch from {
 	case StatusCreated:
-		return true
-	case StatusIntransit:
 		return to == StatusIntransit || to == StatusCancelled
+	case StatusIntransit:
+		return to == StatusCompleted || to == StatusCancelled
 	case StatusArrived:
-		return to == StatusIntransit
+		return to == StatusCompleted
 	default:
-		return true
+		return false
 	}
 }
 
 func Validate(v Dispatch) error {
 	if v.FromWarehouseID == "" || v.ToWarehouseID == "" {
 		return fmt.Errorf("dispatch: source and target warehouses required")
+	}
+	if v.FromWarehouseID == v.ToWarehouseID {
+		return fmt.Errorf("dispatch: source and target must differ")
 	}
 	if len(v.Items) == 0 {
 		return fmt.Errorf("dispatch: at least one item required")
