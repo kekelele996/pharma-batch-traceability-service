@@ -64,15 +64,15 @@ func Validate(v PurchaseOrder) error {
 func CanTransition(from, to string) bool {
 	switch from {
 	case StatusDraft:
-		return true
-	case StatusApproved:
-		return to == StatusReceived || to == StatusCancelled
-	case StatusOrdered:
 		return to == StatusApproved || to == StatusCancelled
+	case StatusApproved:
+		return to == StatusOrdered || to == StatusCancelled
+	case StatusOrdered:
+		return to == StatusReceived || to == StatusCancelled
 	case StatusReceived:
-		return to == StatusCancelled
+		return false
 	default:
-		return true
+		return false
 	}
 }
 
