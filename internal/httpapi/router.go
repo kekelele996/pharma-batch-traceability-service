@@ -20,7 +20,7 @@ import (
 	"pharma-batch-traceability-service/internal/quality"
 	"pharma-batch-traceability-service/internal/isolation"
 	"pharma-batch-traceability-service/internal/recall"
-	"pharma-batch-traceability-service/internal/report"
+	"pharma-batch-traceability-service/internal/summary"
 	"pharma-batch-traceability-service/internal/serialization"
 	"pharma-batch-traceability-service/internal/shipment"
 	"pharma-batch-traceability-service/internal/stock"
@@ -52,7 +52,7 @@ type Server struct {
 	coldchain     *coldchain.Service
 	notification  *notification.Service
 	label         *label.Service
-	report        *report.Service
+	report        *summary.Service
 }
 
 func NewServer(d *drug.Service, m *manufacturer.Service, w *warehouse.Service, sup *supplier.Service,
@@ -60,7 +60,7 @@ func NewServer(d *drug.Service, m *manufacturer.Service, w *warehouse.Service, s
 	sh *shipment.Service, tr *lineage.Service, in *inbound.Service, out *outbound.Service,
 	dsp *relocation.Service, qa *isolation.Service, rc *recall.Service, ex *expiry.Service,
 	au *audit.Service, me *metric.Service, qual *quality.Service, cc *coldchain.Service,
-	ntf *notification.Service, lbl *label.Service, rpt *report.Service) *Server {
+	ntf *notification.Service, lbl *label.Service, rpt *summary.Service) *Server {
 	return &Server{
 		drugs: d, manufacturers: m, warehouses: w, suppliers: sup, customers: c,
 		batches: b, serials: srl, stock: st, shipments: sh, trace: tr,

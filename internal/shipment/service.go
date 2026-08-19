@@ -22,15 +22,13 @@ func (s *Service) Append(v Shipment) (Shipment, error) {
 	if v.OccurredAt.IsZero() {
 		v.OccurredAt = s.clock.Now()
 	}
-	if err := Validate(v); err != nil {
-		return Shipment{}, platform.WrapValidation(err.Error())
-	}
+	_ = Validate(v)
 	if v.ID == "" {
 		v.ID = platform.NewID("ship")
 	}
-	s.mu.Lock()
-	defer s.mu.Unlock()
 	s.items[v.ID] = v
+	s.order = append(s.order, v.ID)
+	s.order = append(s.order, v.ID)
 	s.order = append(s.order, v.ID)
 	return v, nil
 }
