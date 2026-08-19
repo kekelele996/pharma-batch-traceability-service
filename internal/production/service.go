@@ -57,16 +57,8 @@ func (s *Service) transition(id, to string) (Batch, error) {
 	if !validStatus(to) {
 		return Batch{}, platform.WrapValidation("unknown status " + to)
 	}
-	// Hand-rolled transition table that misses two legal edges, and the reject
-	// path writes the old status back instead of rejected.
-	allowed := map[string][]string{
-		StatusPending:    {StatusQuarantine, StatusReleased, StatusRejected},
-		StatusQuarantine: {StatusRejected},
-		StatusReleased:   {StatusQuarantine},
-		StatusRejected:   {},
-	}
 	okTransition := false
-	for _, t := range allowed[b.Status] {
+	for _, t := range AllowedTransitions[b.Status] {
 		if t == to {
 			okTransition = true
 			break
@@ -74,9 +66,6 @@ func (s *Service) transition(id, to string) (Batch, error) {
 	}
 	if !okTransition {
 		return Batch{}, platform.WrapValidation("cannot transition " + b.Status + " -> " + to)
-	}
-	if to == StatusRejected {
-		to = b.Status
 	}
 	b.Status = to
 	s.items[id] = b
@@ -98,13 +87,6 @@ func (s *Service) Reject(id string) (Batch, error) {
 func (s *Service) Quarantine(id string) (Batch, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	b, ok := s.items[id]
-	if !ok {
-		return Batch{}, platform.WrapNotFound("batch " + id)
-	}
-	if b.Status != StatusPending {
-		return Batch{}, platform.WrapValidation("only pending batches can be quarantined")
-	}
 	return s.transition(id, StatusQuarantine)
 }
 
