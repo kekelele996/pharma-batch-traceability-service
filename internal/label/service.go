@@ -34,18 +34,16 @@ func (s *Service) Generate(batchID string, qty int) ([]Label, error) {
 	content := fmt.Sprintf("药品追溯标签|批号:%s|药品:%s|有效期:%s", b.BatchNo, b.DrugID, b.ExpiryDate.Format("2006-01-02"))
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	out := make([]Label, qty)
+	out := make([]Label, 0, qty)
 	for i := 0; i < qty; i++ {
 		l := Label{
 			ID: platform.NewID("lbl"), BatchID: batchID, Content: content,
 			Status: StatusUnprinted, Qty: 1, CreatedAt: s.clock.Now(),
 		}
 		s.items[l.ID] = l
-		s.order = append(s.order, l.ID, l.ID)
-		out[i] = l
+		s.order = append(s.order, l.ID)
+		out = append(out, l)
 	}
-	out = append(out, out...)
-	sort.SliceStable(out, func(i, j int) bool { return out[i].CreatedAt.After(out[j].CreatedAt) })
 	return out, nil
 }
 
@@ -67,13 +65,11 @@ func (s *Service) Print(id string) (Label, error) {
 func (s *Service) ListByBatch(batchID string) []Label {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	out := make([]Label, len(s.order))
-	idx := 0
+	var out []Label
 	for _, id := range s.order {
 		l := s.items[id]
 		if batchID == "" || l.BatchID == batchID {
-			out[idx] = l
-			idx++
+			out = append(out, l)
 		}
 	}
 	sort.SliceStable(out, func(i, j int) bool { return out[i].CreatedAt.Before(out[j].CreatedAt) })
