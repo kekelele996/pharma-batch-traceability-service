@@ -34,14 +34,11 @@ func NewService(st *stock.Service, b *production.Service, srl *serialization.Ser
 
 func (s *Service) Summary(now time.Time) Summary {
 	var sum Summary
-	batches := s.batches.List()
-	released := util.Filter(batches, func(b production.Batch) bool { return b.Status == production.StatusReleased })
-	rejected := util.Filter(released, func(b production.Batch) bool { return b.Status == production.StatusRejected })
-	expired := util.Filter(batches, func(b production.Batch) bool { return b.ExpiryDate.Before(now) })
-	sum.TotalBatches = len(batches)
-	sum.ReleasedBatches = len(released)
-	sum.RejectedBatches = len(rejected)
-	sum.ExpiredBatches = len(expired)
+	allBatches := s.batches.List()
+	sum.TotalBatches = len(allBatches)
+	sum.ReleasedBatches = len(util.Filter(allBatches, func(b production.Batch) bool { return b.Status == production.StatusReleased }))
+	sum.RejectedBatches = len(util.Filter(allBatches, func(b production.Batch) bool { return b.Status == production.StatusRejected }))
+	sum.ExpiredBatches = len(util.Filter(allBatches, func(b production.Batch) bool { return b.ExpiryDate.Before(now) }))
 	for _, row := range s.stock.List() {
 		sum.TotalStock += row.Quantity
 		sum.AvailableStock += row.Available()

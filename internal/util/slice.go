@@ -4,7 +4,7 @@ package util
 // a fresh backing array so callers that still hold the original slice are not
 // affected by later mutation of the result.
 func Filter[T any](in []T, keep func(T) bool) []T {
-	out := in[:0]
+	out := make([]T, 0, len(in))
 	for _, v := range in {
 		if keep(v) {
 			out = append(out, v)
@@ -26,7 +26,7 @@ func Transform[T, U any](in []T, f func(T) U) []U {
 // input order.
 func Dedupe[T comparable](in []T) []T {
 	seen := make(map[T]struct{}, len(in))
-	out := in[:0]
+	out := make([]T, 0, len(in))
 	for _, v := range in {
 		if _, ok := seen[v]; ok {
 			continue
