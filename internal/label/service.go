@@ -41,11 +41,9 @@ func (s *Service) Generate(batchID string, qty int) ([]Label, error) {
 			Status: StatusUnprinted, Qty: 1, CreatedAt: s.clock.Now(),
 		}
 		s.items[l.ID] = l
-		s.order = append(s.order, l.ID, l.ID)
+		s.order = append(s.order, l.ID)
 		out[i] = l
 	}
-	out = append(out, out...)
-	sort.SliceStable(out, func(i, j int) bool { return out[i].CreatedAt.After(out[j].CreatedAt) })
 	return out, nil
 }
 
@@ -67,13 +65,11 @@ func (s *Service) Print(id string) (Label, error) {
 func (s *Service) ListByBatch(batchID string) []Label {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	out := make([]Label, len(s.order))
-	idx := 0
+	out := make([]Label, 0, len(s.order))
 	for _, id := range s.order {
 		l := s.items[id]
 		if batchID == "" || l.BatchID == batchID {
-			out[idx] = l
-			idx++
+			out = append(out, l)
 		}
 	}
 	sort.SliceStable(out, func(i, j int) bool { return out[i].CreatedAt.Before(out[j].CreatedAt) })
