@@ -2,8 +2,10 @@ package expiry
 
 import (
 	"context"
+	"fmt"
 	"time"
 
+	"pharma-batch-traceability-service/internal/backoff"
 	"pharma-batch-traceability-service/internal/production"
 	"pharma-batch-traceability-service/internal/stock"
 )
@@ -43,10 +45,16 @@ func (s *Service) Scan(now time.Time) Report {
 	return report
 }
 
-// LockExpired freezes the stock of every batch that has already expired.
+// LockExpired freezes the stock of every batch that has already expired. It
+// aborts early when ctx is cancelled so long-running scans can be stopped.
 func (s *Service) LockExpired(ctx context.Context, now time.Time) ([]production.Batch, error) {
 	var locked []production.Batch
 	for _, b := range s.batch.ExpiredBefore(now) {
+		select {
+		case <-ctx.Done():
+			return locked, fmt.Errorf("lock expired: %w", backoff.ErrAborted)
+		default:
+		}
 		for _, row := range s.stock.ListByBatch(b.ID) {
 			if _, err := s.stock.Freeze(row.BatchID, row.WarehouseID); err != nil {
 				return nil, err

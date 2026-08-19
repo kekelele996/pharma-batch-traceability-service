@@ -40,6 +40,8 @@ func (w *ExpiryWorker) Start(ctx context.Context) {
 				if _, err := w.service.LockExpired(w.ctx, time.Now().UTC()); err != nil {
 					log.Printf("expiry worker: lock expired: %v", err)
 				}
+			case <-w.ctx.Done():
+				return
 			}
 		}
 	}()

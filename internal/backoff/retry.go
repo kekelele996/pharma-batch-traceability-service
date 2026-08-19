@@ -2,9 +2,13 @@ package backoff
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 )
+
+// ErrAborted is returned when an operation is interrupted by context cancellation.
+var ErrAborted = errors.New("aborted")
 
 // Do calls fn up to attempts times, sleeping backoff between failures. It
 // stops early when ctx is cancelled and returns the last observed error after
@@ -15,6 +19,11 @@ func Do(ctx context.Context, attempts int, backoff time.Duration, fn func() erro
 	}
 	var last error
 	for i := 0; i < attempts; i++ {
+		select {
+		case <-ctx.Done():
+			return fmt.Errorf("retry: %w", ErrAborted)
+		default:
+		}
 		if err := fn(); err == nil {
 			return nil
 		} else {
@@ -30,10 +39,12 @@ func Do(ctx context.Context, attempts int, backoff time.Duration, fn func() erro
 	return fmt.Errorf("retry: exhausted after %d attempts: %w", attempts, last)
 }
 
-// SleepCtx sleeps for d, returning early when ctx is cancelled.
+// SleepCtx sleeps for d, returning early with ErrAborted when ctx is cancelled.
 func SleepCtx(ctx context.Context, d time.Duration) error {
 	select {
 	case <-time.After(d):
 		return nil
+	case <-ctx.Done():
+		return fmt.Errorf("sleep: %w", ErrAborted)
 	}
 }
