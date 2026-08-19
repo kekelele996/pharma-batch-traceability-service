@@ -1,6 +1,8 @@
 package inbound
 
-// rollback is supposed to reverse stock already received for a failed inbound,
-// but the current implementation does nothing.
+// rollback reverses stock already received for an inbound that failed partway.
 func (s *Service) rollback(warehouseID string, items []InboundItem) {
+	for _, it := range items {
+		_, _ = s.stock.Deduct(it.BatchID, warehouseID, it.Qty)
+	}
 }
