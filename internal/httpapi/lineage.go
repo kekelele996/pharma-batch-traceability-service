@@ -8,10 +8,14 @@ import (
 )
 
 func traceStatus(err error) int {
-	if platform.IsValidation(err) {
+	switch {
+	case platform.IsNotFound(err):
+		return http.StatusNotFound
+	case platform.IsValidation(err):
 		return http.StatusBadRequest
+	default:
+		return http.StatusInternalServerError
 	}
-	return http.StatusInternalServerError
 }
 
 func (s *Server) traceByCode(w http.ResponseWriter, r *http.Request) {

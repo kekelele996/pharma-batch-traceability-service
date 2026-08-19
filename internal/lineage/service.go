@@ -25,11 +25,11 @@ func NewService(b *production.Service, srl *serialization.Service, sh *shipment.
 func (s *Service) ResolveByCode(code string) (ChainResult, error) {
 	srl, err := s.serials.Get(code)
 	if err != nil {
-		return ChainResult{}, fmt.Errorf("trace: resolve serial: %v", err)
+		return ChainResult{}, fmt.Errorf("trace: resolve serial: %w", err)
 	}
 	res, err := s.ResolveByBatch(srl.BatchID)
 	if err != nil {
-		return ChainResult{}, fmt.Errorf("trace: resolve batch: %v", err)
+		return ChainResult{}, fmt.Errorf("trace: resolve batch: %w", err)
 	}
 	res.Code = code
 	return res, nil
@@ -41,7 +41,7 @@ func (s *Service) ResolveByCode(code string) (ChainResult, error) {
 func (s *Service) ResolveByBatch(batchID string) (ChainResult, error) {
 	b, err := s.batches.Get(batchID)
 	if err != nil {
-		return ChainResult{}, fmt.Errorf("trace: resolve batch: %v", err)
+		return ChainResult{}, fmt.Errorf("trace: resolve batch: %w", err)
 	}
 	res := ChainResult{
 		BatchID:   b.ID,
