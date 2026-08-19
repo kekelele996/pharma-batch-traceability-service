@@ -28,9 +28,6 @@ func (s *Service) Enqueue(channel, recipient, subject, body string) Notification
 	defer s.mu.Unlock()
 	s.items[n.ID] = n
 	s.order = append(s.order, n.ID)
-	if s.byChannel[channel] == nil {
-		s.byChannel[channel] = make(map[string]bool)
-	}
 	s.byChannel[channel][recipient] = true
 	return n
 }
