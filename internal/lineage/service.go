@@ -1,8 +1,6 @@
 package lineage
 
 import (
-	"fmt"
-
 	"pharma-batch-traceability-service/internal/production"
 	"pharma-batch-traceability-service/internal/serialization"
 	"pharma-batch-traceability-service/internal/shipment"
@@ -25,11 +23,11 @@ func NewService(b *production.Service, srl *serialization.Service, sh *shipment.
 func (s *Service) ResolveByCode(code string) (ChainResult, error) {
 	srl, err := s.serials.Get(code)
 	if err != nil {
-		return ChainResult{}, fmt.Errorf("trace: resolve serial: %v", err)
+		return ChainResult{}, err
 	}
 	res, err := s.ResolveByBatch(srl.BatchID)
 	if err != nil {
-		return ChainResult{}, fmt.Errorf("trace: resolve batch: %v", err)
+		return ChainResult{}, err
 	}
 	res.Code = code
 	return res, nil
@@ -41,7 +39,7 @@ func (s *Service) ResolveByCode(code string) (ChainResult, error) {
 func (s *Service) ResolveByBatch(batchID string) (ChainResult, error) {
 	b, err := s.batches.Get(batchID)
 	if err != nil {
-		return ChainResult{}, fmt.Errorf("trace: resolve batch: %v", err)
+		return ChainResult{}, err
 	}
 	res := ChainResult{
 		BatchID:   b.ID,

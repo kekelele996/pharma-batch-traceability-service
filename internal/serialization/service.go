@@ -64,7 +64,7 @@ func (s *Service) Activate(code string) (Serial, error) {
 	defer s.mu.Unlock()
 	it, ok := s.items[code]
 	if !ok {
-		return Serial{}, fmt.Errorf("serialization: serial %s missing", code)
+		return Serial{}, platform.WrapNotFound("serial " + code)
 	}
 	if !it.ActivatedAt.IsZero() {
 		return Serial{}, platform.WrapConflict("serial " + code + " already activated")
