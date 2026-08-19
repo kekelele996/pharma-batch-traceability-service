@@ -45,9 +45,30 @@ func (s *Service) Receive(batchID, warehouseID string, qty int) (Stock, error) {
 	return v, nil
 }
 
-// Deduct removes available quantity, refusing to over-issue.
-func (s *Service) Deduct(batchID, warehouseID string, qty int) (Stock, error) {
+// Reverse removes on-hand quantity previously added by Receive, undoing a
+// partial putaway when a later item invalidates the inbound. It refuses to
+// drive quantity negative so a buggy caller cannot corrupt stock.
+func (s *Service) Reverse(batchID, warehouseID string, qty int) (Stock, error) {
 	if qty <= 0 {
+		return Stock{}, platform.WrapValidation("reverse quantity must be positive")
+	}
+	k := Key(batchID, warehouseID)
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	v, ok := s.get(k)
+	if !ok {
+		return Stock{}, platform.WrapNotFound("stock " + k)
+	}
+	if v.Quantity < qty {
+		return Stock{}, platform.WrapConflict("insufficient quantity to reverse " + k)
+	}
+	v.Quantity -= qty
+	s.set(k, v)
+	return v, nil
+}
+
+// Deduct removes available quantity, refusing to over-issue.
+func (s *Service) Deduct(batchID, warehouseID string, qty int) (Stock, error) {	if qty <= 0 {
 		return Stock{}, platform.WrapValidation("deduct quantity must be positive")
 	}
 	k := Key(batchID, warehouseID)

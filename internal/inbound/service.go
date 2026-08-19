@@ -24,7 +24,9 @@ func NewService(clock platform.Clock, b *production.Service, st *stock.Service) 
 
 func (s *Service) Create(v Inbound) (Inbound, error) {
 	v.Status = StatusDraft
-	_ = Validate(v)
+	if err := Validate(v); err != nil {
+		return Inbound{}, platform.WrapValidation(err.Error())
+	}
 	if v.ID == "" {
 		v.ID = platform.NewID("in")
 	}
@@ -59,8 +61,10 @@ func (s *Service) Accept(id, qcResult string) (Inbound, error) {
 	return v, nil
 }
 
-// Putaway moves accepted inbound items into stock. Only released batches may
-// be put on the shelf; an unreleased batch aborts the whole operation.
+// Putaway moves accepted inbound items into stock. Each item must resolve to a
+// released batch; if any item is missing or unreleased the whole operation
+// aborts and stock already received for earlier items is rolled back, so a
+// single bad batch never leaves partial shelves behind.
 func (s *Service) Putaway(id string) (Inbound, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -71,18 +75,28 @@ func (s *Service) Putaway(id string) (Inbound, error) {
 	if v.Status != StatusAccepted {
 		return Inbound{}, platform.WrapConflict("inbound " + id + " is " + v.Status)
 	}
+
+	// Receive item by item. On the first missing or unreleased batch, undo
+	// the shelves we already filled so the warehouse is not left with partial
+	// stock, then surface the error.
+	received := make([]InboundItem, 0, len(v.Items))
 	for _, it := range v.Items {
 		b, err := s.batch.Get(it.BatchID)
 		if err != nil {
-			continue
+			s.rollback(v.WarehouseID, received)
+			return Inbound{}, platform.WrapNotFound("inbound " + id + ": batch " + it.BatchID)
 		}
 		if b.Status != production.StatusReleased {
-			continue
+			s.rollback(v.WarehouseID, received)
+			return Inbound{}, platform.WrapConflict("inbound " + id + ": batch " + it.BatchID + " is " + b.Status)
 		}
 		if _, err := s.stock.Receive(it.BatchID, v.WarehouseID, it.Qty); err != nil {
-			continue
+			s.rollback(v.WarehouseID, received)
+			return Inbound{}, err
 		}
+		received = append(received, it)
 	}
+
 	v.Status = StatusPutaway
 	s.items[id] = v
 	return v, nil
