@@ -31,7 +31,6 @@ func (s *Service) Issue(batchID string, level int, reason string) (Recall, error
 		if _, err := s.stock.Freeze(row.BatchID, row.WarehouseID); err != nil {
 			return Recall{}, err
 		}
-		break
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
