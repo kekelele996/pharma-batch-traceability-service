@@ -45,12 +45,16 @@ func (s *Service) Receive(batchID, warehouseID string, qty int) (Stock, error) {
 	return v, nil
 }
 
-// Deduct removes available quantity, refusing to over-issue.
+// Deduct removes available quantity, refusing to over-issue. The read, the
+// availability check, and the mutation all happen under the write lock so that
+// concurrent deducts cannot race on a stale snapshot and over-issue stock.
 func (s *Service) Deduct(batchID, warehouseID string, qty int) (Stock, error) {
 	if qty <= 0 {
 		return Stock{}, platform.WrapValidation("deduct quantity must be positive")
 	}
 	k := Key(batchID, warehouseID)
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	v, ok := s.get(k)
 	if !ok {
 		return Stock{}, platform.WrapNotFound("stock " + k)
@@ -58,19 +62,21 @@ func (s *Service) Deduct(batchID, warehouseID string, qty int) (Stock, error) {
 	if v.Available() < qty {
 		return Stock{}, platform.WrapConflict("insufficient available stock for " + k)
 	}
-	s.mu.Lock()
 	v.Quantity -= qty
 	s.set(k, v)
-	s.mu.Unlock()
 	return v, nil
 }
 
-// Lock reserves quantity for an in-flight outbound or relocation.
+// Lock reserves quantity for an in-flight outbound or relocation. The check
+// and the mutation run under the write lock so concurrent locks cannot reserve
+// more than what is actually available.
 func (s *Service) Lock(batchID, warehouseID string, qty int) (Stock, error) {
 	if qty <= 0 {
 		return Stock{}, platform.WrapValidation("lock quantity must be positive")
 	}
 	k := Key(batchID, warehouseID)
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	v, ok := s.get(k)
 	if !ok {
 		return Stock{}, platform.WrapNotFound("stock " + k)
@@ -78,19 +84,21 @@ func (s *Service) Lock(batchID, warehouseID string, qty int) (Stock, error) {
 	if v.Available() < qty {
 		return Stock{}, platform.WrapConflict("insufficient stock to lock " + k)
 	}
-	s.mu.Lock()
 	v.Locked += qty
 	s.set(k, v)
-	s.mu.Unlock()
 	return v, nil
 }
 
-// Unlock releases previously locked quantity.
+// Unlock releases previously locked quantity. The check and the mutation run
+// under the write lock so concurrent unlocks cannot drive the locked count
+// below zero.
 func (s *Service) Unlock(batchID, warehouseID string, qty int) (Stock, error) {
 	if qty <= 0 {
 		return Stock{}, platform.WrapValidation("unlock quantity must be positive")
 	}
 	k := Key(batchID, warehouseID)
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	v, ok := s.get(k)
 	if !ok {
 		return Stock{}, platform.WrapNotFound("stock " + k)
@@ -98,10 +106,8 @@ func (s *Service) Unlock(batchID, warehouseID string, qty int) (Stock, error) {
 	if v.Locked < qty {
 		return Stock{}, platform.WrapConflict("cannot unlock more than locked for " + k)
 	}
-	s.mu.Lock()
 	v.Locked -= qty
 	s.set(k, v)
-	s.mu.Unlock()
 	return v, nil
 }
 
