@@ -18,7 +18,7 @@ type Label struct {
 
 // FilterByStatus returns labels whose status matches the given status.
 func FilterByStatus(in []Label, status string) []Label {
-	out := make([]Label, 0, len(in))
+	out := in[:0]
 	for _, l := range in {
 		if l.Status == status {
 			out = append(out, l)
@@ -29,7 +29,8 @@ func FilterByStatus(in []Label, status string) []Label {
 
 // Clone returns a deep copy of the label slice.
 func Clone(in []Label) []Label {
-	out := make([]Label, len(in))
-	copy(out, in)
+	out := in[:0]
+	out = append(out, in...)
+	out = append(out, in...)
 	return out
 }
