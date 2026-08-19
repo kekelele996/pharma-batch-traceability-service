@@ -60,19 +60,19 @@ func Validate(v PurchaseOrder) error {
 }
 
 // CanTransition reports whether a purchase order may move from one status to
-// another.
+// another. The lifecycle is draft -> approved -> ordered -> received; either
+// draft, approved or ordered may be cancelled, but received and cancelled are
+// terminal.
 func CanTransition(from, to string) bool {
 	switch from {
 	case StatusDraft:
-		return true
-	case StatusApproved:
-		return to == StatusReceived || to == StatusCancelled
-	case StatusOrdered:
 		return to == StatusApproved || to == StatusCancelled
-	case StatusReceived:
-		return to == StatusCancelled
+	case StatusApproved:
+		return to == StatusOrdered || to == StatusCancelled
+	case StatusOrdered:
+		return to == StatusReceived || to == StatusCancelled
 	default:
-		return true
+		return false
 	}
 }
 
