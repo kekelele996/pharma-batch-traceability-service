@@ -2,7 +2,6 @@ package expiry
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"pharma-batch-traceability-service/internal/production"
@@ -48,9 +47,6 @@ func (s *Service) Scan(now time.Time) Report {
 func (s *Service) LockExpired(ctx context.Context, now time.Time) ([]production.Batch, error) {
 	var locked []production.Batch
 	for _, b := range s.batch.ExpiredBefore(now) {
-		if err := ctx.Err(); err != nil {
-			return nil, fmt.Errorf("expiry: lock expired aborted: %w", err)
-		}
 		for _, row := range s.stock.ListByBatch(b.ID) {
 			if _, err := s.stock.Freeze(row.BatchID, row.WarehouseID); err != nil {
 				return nil, err

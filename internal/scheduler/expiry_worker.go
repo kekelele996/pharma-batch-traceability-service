@@ -1,4 +1,4 @@
-package worker
+package scheduler
 
 import (
 	"context"
@@ -16,6 +16,7 @@ type ExpiryWorker struct {
 	interval time.Duration
 	service  *expiry.Service
 	wg       sync.WaitGroup
+	ctx      context.Context
 }
 
 func NewExpiryWorker(interval time.Duration, svc *expiry.Service) *ExpiryWorker {
@@ -27,6 +28,7 @@ func NewExpiryWorker(interval time.Duration, svc *expiry.Service) *ExpiryWorker 
 
 // Start launches the scan loop in the background and returns immediately.
 func (w *ExpiryWorker) Start(ctx context.Context) {
+	w.ctx = ctx
 	w.wg.Add(1)
 	go func() {
 		defer w.wg.Done()
@@ -34,13 +36,8 @@ func (w *ExpiryWorker) Start(ctx context.Context) {
 		defer ticker.Stop()
 		for {
 			select {
-			case <-ctx.Done():
-				return
 			case <-ticker.C:
-				if ctx.Err() != nil {
-					return
-				}
-				if _, err := w.service.LockExpired(ctx, time.Now().UTC()); err != nil {
+				if _, err := w.service.LockExpired(w.ctx, time.Now().UTC()); err != nil {
 					log.Printf("expiry worker: lock expired: %v", err)
 				}
 			}

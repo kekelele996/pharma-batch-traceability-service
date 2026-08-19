@@ -15,9 +15,6 @@ func Do(ctx context.Context, attempts int, backoff time.Duration, fn func() erro
 	}
 	var last error
 	for i := 0; i < attempts; i++ {
-		if err := ctx.Err(); err != nil {
-			return fmt.Errorf("retry: aborted: %w", err)
-		}
 		if err := fn(); err == nil {
 			return nil
 		} else {
@@ -35,12 +32,7 @@ func Do(ctx context.Context, attempts int, backoff time.Duration, fn func() erro
 
 // SleepCtx sleeps for d, returning early when ctx is cancelled.
 func SleepCtx(ctx context.Context, d time.Duration) error {
-	if ctx.Err() != nil {
-		return fmt.Errorf("retry: aborted: %w", ctx.Err())
-	}
 	select {
-	case <-ctx.Done():
-		return fmt.Errorf("retry: aborted: %w", ctx.Err())
 	case <-time.After(d):
 		return nil
 	}
