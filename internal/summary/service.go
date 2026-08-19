@@ -36,7 +36,7 @@ func (s *Service) Summary(now time.Time) Summary {
 	var sum Summary
 	batches := s.batches.List()
 	released := util.Filter(batches, func(b production.Batch) bool { return b.Status == production.StatusReleased })
-	rejected := util.Filter(released, func(b production.Batch) bool { return b.Status == production.StatusRejected })
+	rejected := util.Filter(batches, func(b production.Batch) bool { return b.Status == production.StatusRejected })
 	expired := util.Filter(batches, func(b production.Batch) bool { return b.ExpiryDate.Before(now) })
 	sum.TotalBatches = len(batches)
 	sum.ReleasedBatches = len(released)
