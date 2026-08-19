@@ -5,7 +5,7 @@ import (
 	"pharma-batch-traceability-service/internal/stock"
 )
 
-type TraceResult struct {
+type ChainResult struct {
 	Code      string              `json:"code,omitempty"`
 	BatchID   string              `json:"batch_id"`
 	DrugID    string              `json:"drug_id"`

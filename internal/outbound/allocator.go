@@ -25,8 +25,9 @@ func Plan(demand int, batches []production.Batch, stockSvc *stock.Service, wareh
 		}
 		return released[i].ExpiryDate.Before(released[j].ExpiryDate)
 	})
-	plan := AllocationPlan{}
+	plan := AllocationPlan{Lines: make([]Allocation, len(released))}
 	remaining := demand
+	idx := 0
 	for _, b := range released {
 		if remaining <= 0 {
 			break
@@ -46,7 +47,8 @@ func Plan(demand int, batches []production.Batch, stockSvc *stock.Service, wareh
 		if take > remaining {
 			take = remaining
 		}
-		plan.Lines = append(plan.Lines, Allocation{BatchID: b.ID, Qty: take})
+		plan.Lines[idx] = Allocation{BatchID: b.ID, Qty: take}
+		idx++
 		remaining -= take
 	}
 	return plan, remaining
