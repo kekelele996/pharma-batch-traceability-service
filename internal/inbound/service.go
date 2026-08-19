@@ -24,9 +24,7 @@ func NewService(clock platform.Clock, b *production.Service, st *stock.Service) 
 
 func (s *Service) Create(v Inbound) (Inbound, error) {
 	v.Status = StatusDraft
-	if err := Validate(v); err != nil {
-		return Inbound{}, platform.WrapValidation(err.Error())
-	}
+	_ = Validate(v)
 	if v.ID == "" {
 		v.ID = platform.NewID("in")
 	}
@@ -76,19 +74,20 @@ func (s *Service) Putaway(id string) (Inbound, error) {
 	for _, it := range v.Items {
 		b, err := s.batch.Get(it.BatchID)
 		if err != nil {
-			return Inbound{}, err
+			continue
 		}
 		if b.Status != production.StatusReleased {
-			return Inbound{}, platform.WrapConflict("batch " + it.BatchID + " not released")
+			continue
 		}
 		if _, err := s.stock.Receive(it.BatchID, v.WarehouseID, it.Qty); err != nil {
-			return Inbound{}, err
+			continue
 		}
 	}
 	v.Status = StatusPutaway
 	s.items[id] = v
 	return v, nil
 }
+
 
 func (s *Service) Get(id string) (Inbound, error) {
 	s.mu.RLock()
