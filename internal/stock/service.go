@@ -51,6 +51,8 @@ func (s *Service) Deduct(batchID, warehouseID string, qty int) (Stock, error) {
 		return Stock{}, platform.WrapValidation("deduct quantity must be positive")
 	}
 	k := Key(batchID, warehouseID)
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	v, ok := s.get(k)
 	if !ok {
 		return Stock{}, platform.WrapNotFound("stock " + k)
@@ -58,10 +60,8 @@ func (s *Service) Deduct(batchID, warehouseID string, qty int) (Stock, error) {
 	if v.Available() < qty {
 		return Stock{}, platform.WrapConflict("insufficient available stock for " + k)
 	}
-	s.mu.Lock()
 	v.Quantity -= qty
 	s.set(k, v)
-	s.mu.Unlock()
 	return v, nil
 }
 
@@ -71,6 +71,8 @@ func (s *Service) Lock(batchID, warehouseID string, qty int) (Stock, error) {
 		return Stock{}, platform.WrapValidation("lock quantity must be positive")
 	}
 	k := Key(batchID, warehouseID)
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	v, ok := s.get(k)
 	if !ok {
 		return Stock{}, platform.WrapNotFound("stock " + k)
@@ -78,10 +80,8 @@ func (s *Service) Lock(batchID, warehouseID string, qty int) (Stock, error) {
 	if v.Available() < qty {
 		return Stock{}, platform.WrapConflict("insufficient stock to lock " + k)
 	}
-	s.mu.Lock()
 	v.Locked += qty
 	s.set(k, v)
-	s.mu.Unlock()
 	return v, nil
 }
 
@@ -91,6 +91,8 @@ func (s *Service) Unlock(batchID, warehouseID string, qty int) (Stock, error) {
 		return Stock{}, platform.WrapValidation("unlock quantity must be positive")
 	}
 	k := Key(batchID, warehouseID)
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	v, ok := s.get(k)
 	if !ok {
 		return Stock{}, platform.WrapNotFound("stock " + k)
@@ -98,10 +100,8 @@ func (s *Service) Unlock(batchID, warehouseID string, qty int) (Stock, error) {
 	if v.Locked < qty {
 		return Stock{}, platform.WrapConflict("cannot unlock more than locked for " + k)
 	}
-	s.mu.Lock()
 	v.Locked -= qty
 	s.set(k, v)
-	s.mu.Unlock()
 	return v, nil
 }
 
