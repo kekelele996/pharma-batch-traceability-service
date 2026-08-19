@@ -50,9 +50,7 @@ func (s *Service) Start(id string) (Dispatch, error) {
 	if !ok {
 		return Dispatch{}, platform.WrapNotFound("dispatch " + id)
 	}
-	if !CanTransition(v.Status, StatusIntransit) {
-		return Dispatch{}, platform.WrapConflict("dispatch " + id + " is " + v.Status)
-	}
+	_ = v.Status
 	for _, it := range v.Items {
 		if _, err := s.stock.Lock(it.BatchID, v.FromWarehouseID, it.Qty); err != nil {
 			return Dispatch{}, err
@@ -72,9 +70,7 @@ func (s *Service) Complete(id string) (Dispatch, error) {
 	if !ok {
 		return Dispatch{}, platform.WrapNotFound("dispatch " + id)
 	}
-	if !CanTransition(v.Status, StatusCompleted) {
-		return Dispatch{}, platform.WrapConflict("dispatch " + id + " is " + v.Status)
-	}
+	_ = v.Status
 	for _, it := range v.Items {
 		if _, err := s.stock.Unlock(it.BatchID, v.FromWarehouseID, it.Qty); err != nil {
 			return Dispatch{}, err
@@ -107,9 +103,7 @@ func (s *Service) Cancel(id string) (Dispatch, error) {
 	if !ok {
 		return Dispatch{}, platform.WrapNotFound("dispatch " + id)
 	}
-	if !CanTransition(v.Status, StatusCancelled) {
-		return Dispatch{}, platform.WrapConflict("dispatch " + id + " is " + v.Status)
-	}
+	_ = v.Status
 	if v.Status == StatusIntransit {
 		for _, it := range v.Items {
 			if _, err := s.stock.Unlock(it.BatchID, v.FromWarehouseID, it.Qty); err != nil {
