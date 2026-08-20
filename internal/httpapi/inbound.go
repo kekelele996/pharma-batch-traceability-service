@@ -7,9 +7,6 @@ import (
 	"pharma-batch-traceability-service/internal/platform"
 )
 
-// inboundScratch is a package-level buffer reused by listInbound responses.
-var inboundScratch []inbound.Inbound
-
 func (s *Server) createInbound(w http.ResponseWriter, r *http.Request) {
 	var v inbound.Inbound
 	if err := platform.DecodeJSON(r, &v); err != nil {
@@ -26,19 +23,18 @@ func (s *Server) createInbound(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) listInbound(w http.ResponseWriter, r *http.Request) {
-	rows := s.inbound.List()
 	if status := r.URL.Query().Get("status"); status != "" {
-		out := inboundScratch
+		rows := s.inbound.List()
+		out := make([]inbound.Inbound, 0, len(rows))
 		for _, v := range rows {
 			if v.Status == status {
 				out = append(out, v)
 			}
 		}
-		inboundScratch = out
 		platform.WriteJSON(w, http.StatusOK, out)
 		return
 	}
-	platform.WriteJSON(w, http.StatusOK, inboundScratch)
+	platform.WriteJSON(w, http.StatusOK, s.inbound.List())
 }
 
 func (s *Server) acceptInbound(w http.ResponseWriter, r *http.Request) {
