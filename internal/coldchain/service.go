@@ -44,29 +44,35 @@ func (s *Service) Record(shipmentID, deviceID, storage string, tempC, humidity f
 
 func (s *Service) ListByShipment(shipmentID string) []Reading {
 	var out []Reading
+	s.mu.RLock()
 	for _, r := range s.items {
 		if shipmentID == "" || r.ShipmentID == shipmentID {
 			out = append(out, r)
 		}
 	}
+	s.mu.RUnlock()
 	sort.SliceStable(out, func(i, j int) bool { return out[i].At.Before(out[j].At) })
 	return out
 }
 
 func (s *Service) List() []Reading {
+	s.mu.RLock()
 	out := make([]Reading, len(s.items))
 	copy(out, s.items)
+	s.mu.RUnlock()
 	sort.SliceStable(out, func(i, j int) bool { return out[i].At.Before(out[j].At) })
 	return out
 }
 
 func (s *Service) Min(shipmentID string) (Reading, bool) {
 	var list []Reading
+	s.mu.RLock()
 	for _, r := range s.items {
 		if shipmentID == "" || r.ShipmentID == shipmentID {
 			list = append(list, r)
 		}
 	}
+	s.mu.RUnlock()
 	if len(list) == 0 {
 		return Reading{}, false
 	}

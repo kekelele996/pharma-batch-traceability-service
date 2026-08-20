@@ -83,21 +83,25 @@ func (s *Service) Calibrate(id string, due time.Time) (Device, error) {
 // CalibrationDue returns devices whose calibration deadline is on or before now.
 func (s *Service) CalibrationDue(now time.Time) []Device {
 	var out []Device
+	s.mu.RLock()
 	for _, id := range s.order {
 		d := s.items[id]
 		if !d.CalibrationDue.IsZero() && !d.CalibrationDue.After(now) && d.Status != "retired" {
 			out = append(out, d)
 		}
 	}
+	s.mu.RUnlock()
 	sort.SliceStable(out, func(i, j int) bool { return out[i].CalibrationDue.Before(out[j].CalibrationDue) })
 	return out
 }
 
 func (s *Service) List() []Device {
+	s.mu.RLock()
 	out := make([]Device, 0, len(s.items))
 	for _, id := range s.order {
 		out = append(out, s.items[id])
 	}
+	s.mu.RUnlock()
 	sort.SliceStable(out, func(i, j int) bool { return out[i].Code < out[j].Code })
 	return out
 }
