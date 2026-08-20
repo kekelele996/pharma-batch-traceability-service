@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>药品批次追溯查询</title>
+<style>
+  :root { --brand:#0d6e6e; --ink:#1f2937; --muted:#6b7280; --bg:#f4f7f7; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif; background:var(--bg); color:var(--ink); }
+  .wrap { max-width:720px; margin:48px auto; padding:0 16px; }
+  h1 { color:var(--brand); font-size:22px; }
+  .card { background:#fff; border-radius:12px; padding:20px; box-shadow:0 1px 4px rgba(0,0,0,.06); margin-bottom:16px; }
+  .row { display:flex; gap:8px; }
+  input { flex:1; padding:10px 12px; border:1px solid #d1d5db; border-radius:8px; font-size:15px; }
+  button { padding:10px 18px; background:var(--brand); color:#fff; border:0; border-radius:8px; cursor:pointer; font-size:15px; }
+  table { width:100%; border-collapse:collapse; font-size:14px; }
+  th,td { text-align:left; padding:8px 10px; border-bottom:1px solid #eef0f2; }
+  th { color:var(--muted); font-weight:500; }
+  .tag { display:inline-block; padding:2px 8px; border-radius:999px; font-size:12px; background:#e6f4f1; color:var(--brand); }
+  .muted { color:var(--muted); }
+  .err { color:#b42318; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>药品批次追溯查询</h1>
+  <div class="card">
+    <div class="row">
+      <input id="code" placeholder="输入追溯码（GTIN14 + 序列号）">
+      <button onclick="trace()">查询</button>
+    </div>
+  </div>
+  <div class="card" id="result">
+    <div class="muted">输入追溯码后显示生产、流转与库存全链路。</div>
+  </div>
+</div>
+<script>
+async function trace() {
+  const code = document.getElementById('code').value.trim();
+  const box = document.getElementById('result');
+  if (!code) { box.innerHTML = '<div class="muted">请输入追溯码。</div>'; return; }
+  try {
+    const res = await fetch('/api/v1/trace/code/' + encodeURIComponent(code));
+    const data = await res.json();
+    if (!res.ok) { box.innerHTML = '<div class="err">' + (data.error || '查询失败') + '</div>'; return; }
+    const rows = (data.timeline || []).map(t =>
+      '<tr><td>' + t.node_type + '</td><td>' + t.from_id + '</td><td>' + t.to_id + '</td><td>' + (t.temp_c||'') + '</td></tr>').join('');
+    const pos = (data.positions || []).map(p =>
+      '<tr><td>' + p.warehouse_id + '</td><td>' + p.quantity + '</td><td>' + p.locked + '</td><td>' + (p.frozen?'冻结':'可用') + '</td></tr>').join('');
+    box.innerHTML =
+      '<div><span class="tag">' + (data.complete ? '链路完整' : '链路有缺口') + '</span> ' +
+      '批号 <b>' + data.batch_no + '</b>　状态 ' + data.status + '</div>' +
+      '<h3>流转时间线</h3><table><tr><th>节点</th><th>来源</th><th>去向</th><th>温度</th></tr>' + rows + '</table>' +
+      '<h3>库存位置</h3><table><tr><th>仓库</th><th>数量</th><th>锁定</th><th>状态</th></tr>' + pos + '</table>';
+  } catch (e) {
+    box.innerHTML = '<div class="err">请求失败：' + e.message + '</div>';
+  }
+}
+</script>
+</body>
+</html>
