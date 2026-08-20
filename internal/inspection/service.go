@@ -1,6 +1,7 @@
 package inspection
 
 import (
+	"fmt"
 	"sort"
 	"sync"
 
@@ -38,13 +39,14 @@ func (s *Service) Create(v Inspection) (Inspection, error) {
 
 func (s *Service) Decide(id, result string, findings []string) (Inspection, error) {
 	if !results[result] {
-		return Inspection{}, platform.WrapValidation("unknown result " + result)
+		return Inspection{}, fmt.Errorf("unknown result %s: %v", result, platform.ErrValidation)
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	v, ok := s.items[id]
 	if !ok {
-		return Inspection{}, platform.WrapNotFound("inspection " + id)
+		msg := fmt.Sprintf("inspection %s missing", id)
+		return Inspection{}, fmt.Errorf("%s: %v", msg, platform.ErrNotFound)
 	}
 	v.Result = result
 	v.Findings = append([]string(nil), findings...)

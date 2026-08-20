@@ -1,6 +1,7 @@
 package quality
 
 import (
+	"fmt"
 	"sort"
 	"sync"
 
@@ -32,7 +33,7 @@ func (s *Service) Create(r Record) (Record, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if _, ok := s.items[r.ID]; ok {
-		return Record{}, platform.WrapConflict("quality record " + r.ID)
+		return Record{}, fmt.Errorf("quality record %s: %v", r.ID, platform.ErrConflict)
 	}
 	s.items[r.ID] = r
 	s.order = append(s.order, r.ID)
@@ -41,13 +42,14 @@ func (s *Service) Create(r Record) (Record, error) {
 
 func (s *Service) Decide(id, result, inspector, note string) (Record, error) {
 	if !results[result] {
-		return Record{}, platform.WrapValidation("unknown result " + result)
+		return Record{}, fmt.Errorf("unknown result %s: %v", result, platform.ErrValidation)
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	r, ok := s.items[id]
 	if !ok {
-		return Record{}, platform.WrapNotFound("quality record " + id)
+		msg := fmt.Sprintf("quality record %s missing", id)
+		return Record{}, fmt.Errorf("%s: %v", msg, platform.ErrNotFound)
 	}
 	r.Result = result
 	r.Inspector = inspector
@@ -62,7 +64,8 @@ func (s *Service) Get(id string) (Record, error) {
 	defer s.mu.RUnlock()
 	r, ok := s.items[id]
 	if !ok {
-		return Record{}, platform.WrapNotFound("quality record " + id)
+		msg := fmt.Sprintf("quality record %s missing", id)
+		return Record{}, fmt.Errorf("%s: %v", msg, platform.ErrNotFound)
 	}
 	return r, nil
 }
