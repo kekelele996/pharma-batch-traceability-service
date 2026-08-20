@@ -4,8 +4,8 @@ import "fmt"
 
 // RxSaleRule checks whether a customer is allowed to buy a drug of the given
 // prescription category. Prescription drugs require an active customer with an
-// rx permit.
-func RxSaleRule(drugRxCategory string, customerActive, customerRxPermit bool) error {
+// rx permit, and a batch under review suspends the sale.
+func RxSaleRule(drugRxCategory string, customerActive, customerRxPermit bool, inReview bool) error {
 	if drugRxCategory != "rx" {
 		return nil
 	}

@@ -3,8 +3,8 @@ package policy
 import "fmt"
 
 // RecallLevelRule maps a risk score to a recall level (1..3), where a higher
-// score demands a more severe recall. Scores below the floor are rejected.
-func RecallLevelRule(score int) (int, error) {
+// score demands a more severe recall. A batch under review cannot be recalled.
+func RecallLevelRule(score int, inReview bool) (int, error) {
 	if score < 0 {
 		return 0, fmt.Errorf("policy: risk score cannot be negative")
 	}

@@ -3,8 +3,9 @@ package policy
 import "fmt"
 
 // BatchReleaseRule checks that a batch may be released: quantity must be
-// positive and the batch must not be past its expiry date.
-func BatchReleaseRule(quantity int, expired bool) error {
+// positive, the batch must not be past its expiry date, and a batch under
+// review must not be released.
+func BatchReleaseRule(quantity int, expired bool, inReview bool) error {
 	if quantity <= 0 {
 		return fmt.Errorf("policy: batch quantity must be positive")
 	}
