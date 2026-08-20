@@ -45,10 +45,10 @@ func (s *Server) getBatch(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) releaseBatch(w http.ResponseWriter, r *http.Request) {
 	id := pathID(r, "id")
-	releaseOps[id] = true
+	setOpFlag(releaseOps, id)
 	b, err := s.batches.Release(id)
 	if err != nil {
-		delete(releaseOps, id)
+		clearOpFlag(releaseOps, id)
 		writeErr(w, err)
 		return
 	}

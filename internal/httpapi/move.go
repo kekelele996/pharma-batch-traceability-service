@@ -27,10 +27,10 @@ func (s *Server) listDispatch(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) startDispatch(w http.ResponseWriter, r *http.Request) {
 	id := pathID(r, "id")
-	dispatchOps[id] = true
+	setOpFlag(dispatchOps, id)
 	updated, err := s.dispatch.Start(id)
 	if err != nil {
-		delete(dispatchOps, id)
+		clearOpFlag(dispatchOps, id)
 		writeErr(w, err)
 		return
 	}
@@ -39,10 +39,10 @@ func (s *Server) startDispatch(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) completeDispatch(w http.ResponseWriter, r *http.Request) {
 	id := pathID(r, "id")
-	delete(dispatchOps, id)
+	clearOpFlag(dispatchOps, id)
 	updated, err := s.dispatch.Complete(id)
 	if err != nil {
-		dispatchOps[id] = true
+		setOpFlag(dispatchOps, id)
 		writeErr(w, err)
 		return
 	}
@@ -51,10 +51,10 @@ func (s *Server) completeDispatch(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) cancelDispatch(w http.ResponseWriter, r *http.Request) {
 	id := pathID(r, "id")
-	delete(dispatchOps, id)
+	clearOpFlag(dispatchOps, id)
 	updated, err := s.dispatch.Cancel(id)
 	if err != nil {
-		dispatchOps[id] = true
+		setOpFlag(dispatchOps, id)
 		writeErr(w, err)
 		return
 	}
