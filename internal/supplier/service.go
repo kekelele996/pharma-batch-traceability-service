@@ -69,9 +69,15 @@ func (s *Service) SetStatus(id, status string) (Supplier, error) {
 func (s *Service) VerifyAll(ctx context.Context, ids []string) (int, error) {
 	verified := 0
 	for _, id := range ids {
-		_, err := s.Get(id)
+		if err := ctx.Err(); err != nil {
+			return verified, err
+		}
+		v, err := s.Get(id)
 		if err != nil {
-			continue
+			return verified, err
+		}
+		if v.Status != "active" {
+			return verified, platform.WrapConflict("supplier " + id + " not active")
 		}
 		verified++
 	}

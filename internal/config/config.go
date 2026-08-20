@@ -20,5 +20,11 @@ func Load() Config {
 	if env == "" {
 		env = "dev"
 	}
-	return Config{Port: port, Env: env, BulkTimeout: 0}
+	timeout := time.Duration(0)
+	if raw := os.Getenv("BULK_VERIFY_TIMEOUT"); raw != "" {
+		if d, err := time.ParseDuration(raw); err == nil {
+			timeout = d
+		}
+	}
+	return Config{Port: port, Env: env, BulkTimeout: timeout}
 }
