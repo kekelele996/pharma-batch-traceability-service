@@ -18,7 +18,6 @@ type Service struct {
 	batch    *production.Service
 	stock    *stock.Service
 	shipment *shipment.Service
-	scratch  []Allocation
 }
 
 func NewService(clock platform.Clock, b *production.Service, st *stock.Service, sh *shipment.Service) *Service {
@@ -37,6 +36,7 @@ func (s *Service) Create(v Outbound) (Outbound, error) {
 		v.No = "OUT-" + v.ID[len(v.ID)-6:]
 	}
 	v.CreatedAt = s.clock.Now()
+	v.Items = append([]OutboundItem(nil), v.Items...)
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.items[v.ID] = v
@@ -55,7 +55,7 @@ func (s *Service) Allocate(id string) (Outbound, error) {
 	if v.Status != StatusDraft {
 		return Outbound{}, platform.WrapConflict("outbound " + id + " is " + v.Status)
 	}
-	s.scratch = s.scratch[:0]
+	var all []Allocation
 	for _, item := range v.Items {
 		batches := s.batch.ListByDrug(item.DrugID)
 		plan, remaining := Plan(item.Qty, batches, s.stock, v.WarehouseID)
@@ -67,9 +67,9 @@ func (s *Service) Allocate(id string) (Outbound, error) {
 				return Outbound{}, err
 			}
 		}
-		s.scratch = append(s.scratch, plan.Lines...)
+		all = append(all, plan.Lines...)
 	}
-	v.Allocations = s.scratch
+	v.Allocations = all
 	v.Status = StatusAllocated
 	s.items[id] = v
 	return v, nil
@@ -134,7 +134,17 @@ func (s *Service) Cancel(id string) (Outbound, error) {
 
 // LastAllocations returns the allocations of the most recently allocated order.
 func (s *Service) LastAllocations() []Allocation {
-	return s.scratch
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	for i := len(s.order) - 1; i >= 0; i-- {
+		v := s.items[s.order[i]]
+		if v.Status == StatusAllocated {
+			out := make([]Allocation, len(v.Allocations))
+			copy(out, v.Allocations)
+			return out
+		}
+	}
+	return nil
 }
 
 func (s *Service) Get(id string) (Outbound, error) {

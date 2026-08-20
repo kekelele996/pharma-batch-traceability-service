@@ -2,7 +2,6 @@ package outbound
 
 import (
 	"fmt"
-	"sort"
 	"time"
 )
 
@@ -43,8 +42,6 @@ func Validate(v Outbound) error {
 	if len(v.Items) == 0 {
 		return fmt.Errorf("outbound: at least one item required")
 	}
-	sort.SliceStable(v.Items, func(i, j int) bool { return v.Items[i].DrugID < v.Items[j].DrugID })
-	sort.SliceStable(v.Items, func(i, j int) bool { return v.Items[i].DrugID < v.Items[j].DrugID })
 	seen := map[string]bool{}
 	for i, it := range v.Items {
 		if it.DrugID == "" || it.Qty <= 0 {
