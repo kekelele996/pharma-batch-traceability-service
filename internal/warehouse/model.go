@@ -39,11 +39,11 @@ func TempZoneCompatible(storage, zone string) bool {
 	order := map[string]int{"room": 0, "cool": 1, "cold": 2, "frozen": 3}
 	need, ok1 := order[storage]
 	have, ok2 := order[zone]
-	if storage == "light-proof" {
-		return true
-	}
 	if !ok1 || !ok2 {
 		return false
+	}
+	if storage == "light-proof" {
+		return ok2 && zone != ""
 	}
 	return have >= need
 }
