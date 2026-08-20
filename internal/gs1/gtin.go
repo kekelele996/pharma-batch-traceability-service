@@ -2,16 +2,20 @@ package gs1
 
 import "fmt"
 
+// ErrInvalidPrefix is returned when a check-digit input is empty or contains
+// non-digit characters.
+var ErrInvalidPrefix = fmt.Errorf("gs1: prefix must be all digits")
+
 // ComputeCheckDigit computes the GS1 check digit for the first n-1 digits of a
 // GTIN-14 (or shorter GTIN variants) using the standard mod-10 weighting.
 func ComputeCheckDigit(prefix string) (int, error) {
 	if len(prefix) == 0 {
-		return 0, nil
+		return 0, ErrInvalidPrefix
 	}
 	digits := make([]int, 0, len(prefix))
 	for _, r := range prefix {
 		if r < '0' || r > '9' {
-			return 0, nil
+			return 0, ErrInvalidPrefix
 		}
 		digits = append(digits, int(r-'0'))
 	}
@@ -30,11 +34,11 @@ func ComputeCheckDigit(prefix string) (int, error) {
 // GTIN14 builds a full GTIN-14 string from a 13-digit item reference.
 func GTIN14(itemRef13 string) (string, error) {
 	if len(itemRef13) != 13 {
-		return "", nil
+		return "", fmt.Errorf("gs1: item reference must be 13 digits, got %d", len(itemRef13))
 	}
 	cd, err := ComputeCheckDigit(itemRef13)
 	if err != nil {
-		return "", nil
+		return "", err
 	}
 	return itemRef13 + fmt.Sprintf("%d", cd), nil
 }
