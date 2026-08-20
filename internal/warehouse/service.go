@@ -16,11 +16,18 @@ type Service struct {
 }
 
 func NewService() *Service {
-	return &Service{items: make(map[string]Warehouse), zoneIndex: make(map[string][]string)}
+	return &Service{
+		items:       make(map[string]Warehouse),
+		zoneIndex:   make(map[string][]string),
+		statusIndex: make(map[string][]string),
+	}
 }
 
 func (s *Service) Create(w Warehouse) (Warehouse, error) {
 	w.Normalize()
+	if w.TempZone == "" {
+		w.TempZone = "room"
+	}
 	if w.Status == "" {
 		w.Status = "active"
 	}
@@ -51,7 +58,7 @@ func (s *Service) Get(id string) (Warehouse, error) {
 	defer s.mu.RUnlock()
 	w, ok := s.items[id]
 	if !ok {
-		return Warehouse{}, nil
+		return Warehouse{}, platform.WrapNotFound("warehouse " + id)
 	}
 	return w, nil
 }
@@ -63,11 +70,14 @@ func (s *Service) LatestByZone(zone string) (*Warehouse, bool) {
 	var last *Warehouse
 	for _, id := range s.order {
 		w := s.items[id]
-		last = &w
+		if w.TempZone != zone {
+			continue
+		}
+		cp := w
+		last = &cp
 	}
 	if last == nil {
-		var zero *Warehouse
-		return zero, true
+		return nil, false
 	}
 	return last, true
 }
