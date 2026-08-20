@@ -11,6 +11,22 @@ import (
 	"pharma-batch-traceability-service/internal/warehouse"
 )
 
+func (s *Server) bulkSuspendCustomers(w http.ResponseWriter, r *http.Request) {
+	var body struct {
+		IDs []string `json:"ids"`
+	}
+	if err := platform.DecodeJSON(r, &body); err != nil {
+		platform.WriteError(w, http.StatusBadRequest, "invalid json body")
+		return
+	}
+	updated, err := s.customers.SuspendMany(body.IDs)
+	if err != nil {
+		platform.WriteJSON(w, http.StatusOK, map[string]any{"suspended": updated, "error": err.Error()})
+		return
+	}
+	platform.WriteJSON(w, http.StatusOK, map[string]any{"suspended": updated})
+}
+
 func (s *Server) createDrug(w http.ResponseWriter, r *http.Request) {
 	var d drug.Drug
 	if err := platform.DecodeJSON(r, &d); err != nil {

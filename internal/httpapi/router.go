@@ -95,6 +95,7 @@ func (s *Server) Routes() *http.ServeMux {
 	mux.HandleFunc("POST /api/v1/customers", s.createCustomer)
 	mux.HandleFunc("GET /api/v1/customers", s.listCustomers)
 	mux.HandleFunc("POST /api/v1/customers/{id}/rx-permit", s.setCustomerRxPermit)
+	mux.HandleFunc("POST /api/v1/customers/bulk-suspend", s.bulkSuspendCustomers)
 
 	mux.HandleFunc("POST /api/v1/batches", s.createBatch)
 	mux.HandleFunc("GET /api/v1/batches", s.listBatches)
