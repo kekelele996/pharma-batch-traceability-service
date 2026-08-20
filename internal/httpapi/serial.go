@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"pharma-batch-traceability-service/internal/platform"
-	"pharma-batch-traceability-service/internal/serialization"
 )
 
 func (s *Server) generateSerials(w http.ResponseWriter, r *http.Request) {
@@ -19,7 +18,7 @@ func (s *Server) generateSerials(w http.ResponseWriter, r *http.Request) {
 	}
 	items, err := s.serials.Generate(body.ItemRef13, body.BatchID, body.Count)
 	if err != nil {
-		platform.WriteJSON(w, http.StatusCreated, []string{})
+		writeErr(w, err)
 		return
 	}
 	s.metric.Inc("serials.generated", int64(len(items)))
@@ -29,7 +28,7 @@ func (s *Server) generateSerials(w http.ResponseWriter, r *http.Request) {
 func (s *Server) getSerial(w http.ResponseWriter, r *http.Request) {
 	it, err := s.serials.Get(pathID(r, "code"))
 	if err != nil {
-		platform.WriteJSON(w, http.StatusOK, serialization.Serial{})
+		writeErr(w, err)
 		return
 	}
 	platform.WriteJSON(w, http.StatusOK, it)
