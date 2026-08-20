@@ -32,6 +32,9 @@ func (s *Service) Create(v Inspection) (Inspection, error) {
 	v.InspectedAt = s.clock.Now()
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	if _, ok := s.items[v.ID]; ok {
+		return Inspection{}, platform.WrapConflict(fmt.Sprintf("inspection %s", v.ID))
+	}
 	s.items[v.ID] = v
 	s.order = append(s.order, v.ID)
 	return v, nil
@@ -39,14 +42,13 @@ func (s *Service) Create(v Inspection) (Inspection, error) {
 
 func (s *Service) Decide(id, result string, findings []string) (Inspection, error) {
 	if !results[result] {
-		return Inspection{}, fmt.Errorf("unknown result %s: %v", result, platform.ErrValidation)
+		return Inspection{}, platform.WrapValidation(fmt.Sprintf("unknown result %s", result))
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	v, ok := s.items[id]
 	if !ok {
-		msg := fmt.Sprintf("inspection %s missing", id)
-		return Inspection{}, fmt.Errorf("%s: %v", msg, platform.ErrNotFound)
+		return Inspection{}, platform.WrapNotFound(fmt.Sprintf("inspection %s missing", id))
 	}
 	v.Result = result
 	v.Findings = append([]string(nil), findings...)

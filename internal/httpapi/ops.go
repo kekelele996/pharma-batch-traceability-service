@@ -47,7 +47,7 @@ func (s *Server) decideQuality(w http.ResponseWriter, r *http.Request) {
 	}
 	updated, err := s.quality.Decide(pathID(r, "id"), body.Result, body.Inspector, body.Note)
 	if err != nil {
-		platform.WriteError(w, http.StatusInternalServerError, err.Error())
+		writeErr(w, err)
 		return
 	}
 	platform.WriteJSON(w, http.StatusOK, updated)
