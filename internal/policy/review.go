@@ -8,18 +8,21 @@ const ReviewState = "review"
 
 var reviewStatuses = map[string]bool{
 	"pending": true,
+	ReviewState: true,
 	"pass":    true,
 	"fail":    true,
 }
 
 var reviewTransitions = map[string][]string{
-	"pending": {"pass", "fail"},
+	"pending": {"review", "pass", "fail"},
+	"review":  {"pass", "fail"},
 }
 
 var reviewLabels = map[string]string{
-	"pending": "待检",
-	"pass":    "合格",
-	"fail":    "不合格",
+	"pending":    "待检",
+	ReviewState:  "复核中",
+	"pass":       "合格",
+	"fail":       "不合格",
 }
 
 // ValidReviewState reports whether a result state may be assigned to a record.

@@ -12,5 +12,8 @@ func BatchReleaseRule(quantity int, expired bool, inReview bool) error {
 	if expired {
 		return fmt.Errorf("policy: batch already expired")
 	}
+	if inReview {
+		return fmt.Errorf("policy: batch under review cannot be released")
+	}
 	return nil
 }

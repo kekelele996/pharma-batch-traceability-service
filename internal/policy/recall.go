@@ -8,6 +8,9 @@ func RecallLevelRule(score int, inReview bool) (int, error) {
 	if score < 0 {
 		return 0, fmt.Errorf("policy: risk score cannot be negative")
 	}
+	if inReview {
+		return 0, fmt.Errorf("policy: batch under review cannot be recalled")
+	}
 	switch {
 	case score >= 80:
 		return 1, nil

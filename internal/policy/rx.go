@@ -9,6 +9,9 @@ func RxSaleRule(drugRxCategory string, customerActive, customerRxPermit bool, in
 	if drugRxCategory != "rx" {
 		return nil
 	}
+	if inReview {
+		return fmt.Errorf("policy: rx sale suspended while batch under review")
+	}
 	if !customerActive {
 		return fmt.Errorf("policy: customer is not active")
 	}
