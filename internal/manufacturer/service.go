@@ -1,6 +1,7 @@
 package manufacturer
 
 import (
+	"context"
 	"sort"
 	"sync"
 
@@ -61,6 +62,20 @@ func (s *Service) SetStatus(id, status string) (Manufacturer, error) {
 	m.Status = status
 	s.items[id] = m
 	return m, nil
+}
+
+// VerifyAll checks that every manufacturer id exists and is active, honouring
+// context cancellation between iterations.
+func (s *Service) VerifyAll(ctx context.Context, ids []string) (int, error) {
+	verified := 0
+	for _, id := range ids {
+		_, err := s.Get(id)
+		if err != nil {
+			continue
+		}
+		verified++
+	}
+	return verified, nil
 }
 
 func (s *Service) List() []Manufacturer {

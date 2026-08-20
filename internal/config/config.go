@@ -1,10 +1,14 @@
 package config
 
-import "os"
+import (
+	"os"
+	"time"
+)
 
 type Config struct {
-	Port string
-	Env  string
+	Port        string
+	Env         string
+	BulkTimeout time.Duration
 }
 
 func Load() Config {
@@ -16,5 +20,5 @@ func Load() Config {
 	if env == "" {
 		env = "dev"
 	}
-	return Config{Port: port, Env: env}
+	return Config{Port: port, Env: env, BulkTimeout: 0}
 }
