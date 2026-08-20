@@ -82,8 +82,6 @@ func (s *Service) Calibrate(id string, due time.Time) (Device, error) {
 
 // CalibrationDue returns devices whose calibration deadline is on or before now.
 func (s *Service) CalibrationDue(now time.Time) []Device {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
 	var out []Device
 	for _, id := range s.order {
 		d := s.items[id]
@@ -96,8 +94,6 @@ func (s *Service) CalibrationDue(now time.Time) []Device {
 }
 
 func (s *Service) List() []Device {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
 	out := make([]Device, 0, len(s.items))
 	for _, id := range s.order {
 		out = append(out, s.items[id])

@@ -43,10 +43,7 @@ func (s *Service) Append(actor, action, target, detail string) Entry {
 }
 
 func (s *Service) List(limit int) []Entry {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-	out := make([]Entry, len(s.items))
-	copy(out, s.items)
+	out := s.items
 	sort.SliceStable(out, func(i, j int) bool { return out[i].At.After(out[j].At) })
 	if limit > 0 && len(out) > limit {
 		out = out[:limit]
@@ -55,9 +52,7 @@ func (s *Service) List(limit int) []Entry {
 }
 
 func (s *Service) ListByTarget(target string) []Entry {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-	var out []Entry
+	out := s.items[:0]
 	for _, e := range s.items {
 		if target == "" || e.Target == target {
 			out = append(out, e)
