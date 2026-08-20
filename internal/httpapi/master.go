@@ -21,7 +21,7 @@ func (s *Server) bulkSuspendCustomers(w http.ResponseWriter, r *http.Request) {
 	}
 	updated, err := s.customers.SuspendMany(body.IDs)
 	if err != nil {
-		platform.WriteJSON(w, http.StatusOK, map[string]any{"suspended": updated, "error": err.Error()})
+		writeErr(w, err)
 		return
 	}
 	platform.WriteJSON(w, http.StatusOK, map[string]any{"suspended": updated})

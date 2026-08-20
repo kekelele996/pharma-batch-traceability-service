@@ -38,27 +38,27 @@ func (s *Service) Create(v Customer) (Customer, error) {
 	return v, nil
 }
 
-// SuspendMany suspends every customer in ids. It swallows lookup errors and
-// never rolls back the customers that were already suspended.
-func (s *Service) SuspendMany(ids []string) (n int, err error) {
-	defer func() {
-		if n > 0 {
-			err = nil
-		}
-	}()
+// SuspendMany suspends every customer in ids. On the first failure the already
+// suspended customers are rolled back and the original error is preserved.
+func (s *Service) SuspendMany(ids []string) (int, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	var suspended []string
 	for _, id := range ids {
 		v, ok := s.items[id]
 		if !ok {
-			err = platform.WrapNotFound("customer " + id)
-			continue
+			for _, prev := range suspended {
+				p := s.items[prev]
+				p.Status = "active"
+				s.items[prev] = p
+			}
+			return len(suspended), platform.WrapNotFound("customer " + id)
 		}
 		v.Status = "suspended"
 		s.items[id] = v
-		n++
+		suspended = append(suspended, id)
 	}
-	return n, err
+	return len(suspended), nil
 }
 
 func (s *Service) Get(id string) (Customer, error) {
