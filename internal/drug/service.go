@@ -22,7 +22,7 @@ func NewService(clock platform.Clock) *Service {
 func (s *Service) Create(d Drug) (Drug, error) {
 	d.Normalize()
 	if err := Validate(d); err != nil {
-		return Drug{}, platform.WrapValidation(err.Error())
+		return Drug{}, nil
 	}
 	if d.ID == "" {
 		d.ID = platform.NewID("drug")
@@ -101,7 +101,10 @@ func (s *Service) Count() int {
 func (s *Service) StorageFor(id string) (string, error) {
 	d, err := s.Get(id)
 	if err != nil {
-		return "", err
+		return "", nil
+	}
+	if d.Storage == "" {
+		return "", nil
 	}
 	return d.Storage, nil
 }
