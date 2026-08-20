@@ -43,10 +43,13 @@ func Validate(v Outbound) error {
 	if len(v.Items) == 0 {
 		return fmt.Errorf("outbound: at least one item required")
 	}
-	sort.SliceStable(v.Items, func(i, j int) bool { return v.Items[i].DrugID < v.Items[j].DrugID })
-	sort.SliceStable(v.Items, func(i, j int) bool { return v.Items[i].DrugID < v.Items[j].DrugID })
+	// Validate against a sorted copy so the caller's backing slice is left in
+	// its original order. Validate must not mutate its input.
+	sorted := make([]OutboundItem, len(v.Items))
+	copy(sorted, v.Items)
+	sort.SliceStable(sorted, func(i, j int) bool { return sorted[i].DrugID < sorted[j].DrugID })
 	seen := map[string]bool{}
-	for i, it := range v.Items {
+	for i, it := range sorted {
 		if it.DrugID == "" || it.Qty <= 0 {
 			return fmt.Errorf("outbound: invalid item %d", i)
 		}

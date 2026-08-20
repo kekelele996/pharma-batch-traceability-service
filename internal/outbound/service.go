@@ -37,6 +37,9 @@ func (s *Service) Create(v Outbound) (Outbound, error) {
 		v.No = "OUT-" + v.ID[len(v.ID)-6:]
 	}
 	v.CreatedAt = s.clock.Now()
+	// Copy the caller's items slice so a later mutation of the caller's
+	// backing array cannot alter the stored record.
+	v.Items = append([]OutboundItem(nil), v.Items...)
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.items[v.ID] = v
@@ -69,7 +72,10 @@ func (s *Service) Allocate(id string) (Outbound, error) {
 		}
 		s.scratch = append(s.scratch, plan.Lines...)
 	}
-	v.Allocations = s.scratch
+	// Copy into a fresh backing array so the stored record and the snapshot
+	// returned by LastAllocations are independent of s.scratch, which is
+	// reused (and reset) by the next Allocate call.
+	v.Allocations = append([]Allocation(nil), s.scratch...)
 	v.Status = StatusAllocated
 	s.items[id] = v
 	return v, nil
@@ -132,9 +138,12 @@ func (s *Service) Cancel(id string) (Outbound, error) {
 	return v, nil
 }
 
-// LastAllocations returns the allocations of the most recently allocated order.
+// LastAllocations returns a snapshot of the most recently allocated order.
+// The returned slice is a copy, so later allocations cannot overwrite it.
 func (s *Service) LastAllocations() []Allocation {
-	return s.scratch
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return append([]Allocation(nil), s.scratch...)
 }
 
 func (s *Service) Get(id string) (Outbound, error) {

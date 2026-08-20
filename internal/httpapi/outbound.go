@@ -2,7 +2,6 @@ package httpapi
 
 import (
 	"net/http"
-	"sort"
 
 	"pharma-batch-traceability-service/internal/outbound"
 	"pharma-batch-traceability-service/internal/platform"
@@ -19,8 +18,6 @@ func (s *Server) createOutbound(w http.ResponseWriter, r *http.Request) {
 		writeErr(w, err)
 		return
 	}
-	sort.SliceStable(v.Items, func(i, j int) bool { return v.Items[i].DrugID < v.Items[j].DrugID })
-	sort.SliceStable(v.Items, func(i, j int) bool { return v.Items[i].DrugID < v.Items[j].DrugID })
 	s.metric.Inc("outbound.created", 1)
 	platform.WriteJSON(w, http.StatusCreated, created)
 }
