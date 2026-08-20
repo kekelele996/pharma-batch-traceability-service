@@ -45,10 +45,13 @@ func (s *Server) getBatch(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) releaseBatch(w http.ResponseWriter, r *http.Request) {
 	id := pathID(r, "id")
-	releaseOps[id] = true
+	if !releaseTryStart(id) {
+		platform.WriteError(w, http.StatusConflict, "batch release already in progress")
+		return
+	}
 	b, err := s.batches.Release(id)
 	if err != nil {
-		delete(releaseOps, id)
+		releaseFinish(id)
 		writeErr(w, err)
 		return
 	}

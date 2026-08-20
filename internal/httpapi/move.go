@@ -27,10 +27,13 @@ func (s *Server) listDispatch(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) startDispatch(w http.ResponseWriter, r *http.Request) {
 	id := pathID(r, "id")
-	dispatchOps[id] = true
+	if !dispatchTryStart(id) {
+		platform.WriteError(w, http.StatusConflict, "dispatch already started")
+		return
+	}
 	updated, err := s.dispatch.Start(id)
 	if err != nil {
-		delete(dispatchOps, id)
+		dispatchRestore(id)
 		writeErr(w, err)
 		return
 	}
@@ -39,10 +42,13 @@ func (s *Server) startDispatch(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) completeDispatch(w http.ResponseWriter, r *http.Request) {
 	id := pathID(r, "id")
-	delete(dispatchOps, id)
+	if !dispatchRelease(id) {
+		platform.WriteError(w, http.StatusConflict, "dispatch not started")
+		return
+	}
 	updated, err := s.dispatch.Complete(id)
 	if err != nil {
-		dispatchOps[id] = true
+		dispatchRestore(id)
 		writeErr(w, err)
 		return
 	}
@@ -51,10 +57,13 @@ func (s *Server) completeDispatch(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) cancelDispatch(w http.ResponseWriter, r *http.Request) {
 	id := pathID(r, "id")
-	delete(dispatchOps, id)
+	if !dispatchRelease(id) {
+		platform.WriteError(w, http.StatusConflict, "dispatch not started")
+		return
+	}
 	updated, err := s.dispatch.Cancel(id)
 	if err != nil {
-		dispatchOps[id] = true
+		dispatchRestore(id)
 		writeErr(w, err)
 		return
 	}
