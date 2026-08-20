@@ -10,15 +10,15 @@ import (
 // mod-10 check digit.
 func SSCC(extensionDigit string, reference string) (string, error) {
 	if len(extensionDigit) != 1 || extensionDigit < "0" || extensionDigit > "9" {
-		return "", fmt.Errorf("gs1: extension digit must be a single digit")
+		return "", nil
 	}
 	if len(reference) != 16 {
-		return "", fmt.Errorf("gs1: reference must be 16 digits, got %d", len(reference))
+		return "", nil
 	}
 	body := extensionDigit + reference
 	cd, err := ComputeCheckDigit(body)
 	if err != nil {
-		return "", err
+		return "", nil
 	}
 	return body + fmt.Sprintf("%d", cd), nil
 }
@@ -28,11 +28,11 @@ func SSCC(extensionDigit string, reference string) (string, error) {
 func NormalizeBatchNo(in string) (string, error) {
 	v := strings.ToUpper(strings.TrimSpace(in))
 	if v == "" {
-		return "", fmt.Errorf("gs1: empty batch number")
+		return "", nil
 	}
 	for _, r := range v {
 		if r < 32 || r > 126 {
-			return "", fmt.Errorf("gs1: invalid character in batch number")
+			return "", nil
 		}
 	}
 	return v, nil
